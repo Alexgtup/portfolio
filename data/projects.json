@@ -1,0 +1,47 @@
+[
+  {
+    "slug": "----telegram------",
+    "title": "Фин Планер - Telegram-бот учёта расходов и финансовой аналитики",
+    "description": "Telegram-бот для личных финансов: быстрый ввод трат/доходов, категории, регулярные расходы, баланс и отчёты за период. Формирует аналитику (что “тяжелее” всего тянет бюджет), показывает сводку и даёт понятные шаги по оптимизации - всё прямо в интерфейсе Telegram, без внешних приложений.",
+    "year": "2025",
+    "role": "Full-stack (бот + логика + хранение данных)",
+    "stack": [
+      "Python",
+      "aiogram",
+      "SQLite/Postgres",
+      "Telegram Bot API"
+    ],
+    "cover": "/uploads/----telegram-------d324cdf32482.webp",
+    "createdAt": "2025-12-23T16:59:24.424Z"
+  },
+  {
+    "slug": "--swift",
+    "title": "Календарь на swift",
+    "description": "",
+    "year": "2024",
+    "role": "",
+    "stack": [],
+    "cover": "/uploads/--swift-84c1015b0f37.jpg",
+    "createdAt": "2025-12-23T14:41:09.495Z"
+  },
+  {
+    "slug": "react-native",
+    "title": "react native",
+    "description": "",
+    "year": "",
+    "role": "",
+    "stack": [],
+    "cover": "/uploads/react-native-63e6c5c567eb.jpg",
+    "createdAt": "2025-12-23T14:44:49.480Z"
+  },
+  {
+    "slug": "--",
+    "title": "шутер на питоне",
+    "description": "",
+    "year": "",
+    "role": "",
+    "stack": [],
+    "cover": "/uploads/---0257187df049.jpg",
+    "createdAt": "2025-12-23T14:44:13.577Z"
+  }
+]

@@ -2,6 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { getProjects, saveProjects } from "@/lib/projects";
+
+type ActionState = { ok: boolean; error?: string } | null;
+
 function safeSlug(input: string) {
   const map: Record<string, string> = {
     а:"a", б:"b", в:"v", г:"g", д:"d", е:"e", ё:"e", ж:"zh", з:"z", и:"i", й:"y",
@@ -29,7 +32,7 @@ function safeSlug(input: string) {
   return slug || "project";
 }
 
-export async function createProject(formData: FormData): Promise<void> {
+async function createProjectImpl(formData: FormData): Promise<void> {
   const title = String(formData.get("title") || "").trim();
   const year = String(formData.get("year") || "").trim();
   const role = String(formData.get("role") || "").trim();
@@ -43,22 +46,12 @@ export async function createProject(formData: FormData): Promise<void> {
 
   const slug = safeSlug(slugRaw || title);
 
-  const stack = stackRaw
-    ? stackRaw.split(",").map((s) => s.trim()).filter(Boolean)
-    : [];
-
-  const tags = tagsRaw
-    ? tagsRaw.split(",").map((s) => s.trim()).filter(Boolean)
-    : [];
+  const stack = stackRaw ? stackRaw.split(",").map((s) => s.trim()).filter(Boolean) : [];
+  const tags = tagsRaw ? tagsRaw.split(",").map((s) => s.trim()).filter(Boolean) : [];
 
   const projects = await getProjects();
+  if (projects.some((p) => p.slug === slug)) throw new Error("Такой slug уже существует.");
 
-  // если хочешь запретить дубликаты slug:
-  if (projects.some((p) => p.slug === slug)) {
-    throw new Error("Такой slug уже существует.");
-  }
-
-  // cover (если у тебя уже реализована загрузка файла) - оставь свою текущую логику
   const cover = String(formData.get("cover") || "").trim() || undefined;
 
   const next = [
@@ -83,6 +76,17 @@ export async function createProject(formData: FormData): Promise<void> {
   revalidatePath("/admin");
 }
 
+// ✅ Вот это и нужно AdminForm (useActionState)
+export async function createProject(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await createProjectImpl(formData);
+    return { ok: true };
+  } catch (e: any) {
+    return { ok: false, error: e?.message || "Ошибка при добавлении проекта" };
+  }
+}
+
+// ✅ deleteProject оставляем void, чтобы <form action={...}> не ругался
 export async function deleteProject(slug: string, _formData: FormData): Promise<void> {
   const s = String(slug || "").trim();
   if (!s) return;

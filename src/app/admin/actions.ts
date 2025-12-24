@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { getProjects, saveProjects } from "@/lib/projects";
 
-export type ActionState = { ok: boolean; error?: string } | null;
+export type ActionState =
+  | { ok: true; slug: string }
+  | { ok: false; error: string }
+  | null;
 
 function safeSlug(input: string) {
   const map: Record<string, string> = {
@@ -32,7 +35,7 @@ function safeSlug(input: string) {
   return slug || "project";
 }
 
-async function createProjectImpl(formData: FormData): Promise<void> {
+async function createProjectImpl(formData: FormData): Promise<string> {
   const title = String(formData.get("title") || "").trim();
   const year = String(formData.get("year") || "").trim();
   const role = String(formData.get("role") || "").trim();
@@ -74,19 +77,19 @@ async function createProjectImpl(formData: FormData): Promise<void> {
   revalidatePath("/");
   revalidatePath("/projects");
   revalidatePath("/admin");
+
+  return slug;
 }
 
-// ✅ Вот это и нужно AdminForm (useActionState)
-export async function createProject(_prev: ActionState, formData: FormData): Promise<ActionState> {
+export async function createProject(prev: ActionState, formData: FormData): Promise<ActionState> {
   try {
-    await createProjectImpl(formData);
-    return { ok: true };
+    const slug = await createProjectImpl(formData);
+    return { ok: true, slug };
   } catch (e: any) {
     return { ok: false, error: e?.message || "Ошибка при добавлении проекта" };
   }
 }
 
-// ✅ deleteProject оставляем void, чтобы <form action={...}> не ругался
 export async function deleteProject(slug: string, _formData: FormData): Promise<void> {
   const s = String(slug || "").trim();
   if (!s) return;
@@ -100,4 +103,3 @@ export async function deleteProject(slug: string, _formData: FormData): Promise<
   revalidatePath("/projects");
   revalidatePath("/admin");
 }
-

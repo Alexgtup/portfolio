@@ -125,6 +125,8 @@ body.bg-premium > footer {
   opacity: 1;
   animation: shimmer 1.6s ease-in-out infinite;
 }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 @keyframes shimmer {
   0% {

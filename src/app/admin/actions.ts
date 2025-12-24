@@ -2,6 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { getProjects, saveProjects } from "@/lib/projects";
+import path from "node:path";
+import fs from "node:fs/promises";
+import crypto from "node:crypto";
 
 export type ActionState =
   | { ok: true; slug: string }
@@ -35,6 +38,33 @@ function safeSlug(input: string) {
   return slug || "project";
 }
 
+function isFile(v: unknown): v is File {
+  return !!v && typeof v === "object" && typeof (v as any).arrayBuffer === "function";
+}
+
+async function saveUpload(file: File, base: string): Promise<string> {
+  // ВАЖНО: на Vercel filesystem read-only, поэтому загрузки лучше делать локально и коммитить.
+  if (process.env.VERCEL) {
+    throw new Error("Загрузка файлов доступна только локально (на хостинге файловая система read-only).");
+  }
+
+  const uploadsDir = path.join(process.cwd(), "public", "uploads");
+  await fs.mkdir(uploadsDir, { recursive: true });
+
+  const extFromName = path.extname(file.name || "").toLowerCase();
+  const extFromType = file.type?.includes("/") ? `.${file.type.split("/")[1]}` : "";
+  const ext = (extFromName || extFromType || ".jpg").replace(/[^a-z0-9.]/gi, "");
+
+  const stamp = Date.now();
+  const rnd = crypto.randomBytes(6).toString("hex");
+  const filename = `${safeSlug(base)}-${stamp}-${rnd}${ext}`;
+
+  const bytes = await file.arrayBuffer();
+  await fs.writeFile(path.join(uploadsDir, filename), Buffer.from(bytes));
+
+  return `/uploads/${filename}`;
+}
+
 async function createProjectImpl(formData: FormData): Promise<string> {
   const title = String(formData.get("title") || "").trim();
   const year = String(formData.get("year") || "").trim();
@@ -55,7 +85,18 @@ async function createProjectImpl(formData: FormData): Promise<string> {
   const projects = await getProjects();
   if (projects.some((p) => p.slug === slug)) throw new Error("Такой slug уже существует.");
 
-  const cover = String(formData.get("cover") || "").trim() || undefined;
+  // multiple images
+  const raw = formData.getAll("images");
+  const files = raw.filter(isFile).filter((f) => f.size > 0);
+
+  // backward compat (если где-то остался input cover)
+  const legacyCover = formData.get("cover");
+  if (!files.length && isFile(legacyCover) && legacyCover.size > 0) {
+    files.push(legacyCover);
+  }
+
+  const images = files.length ? await Promise.all(files.map((f) => saveUpload(f, slug))) : [];
+  const cover = images[0] || undefined;
 
   const next = [
     {
@@ -67,6 +108,7 @@ async function createProjectImpl(formData: FormData): Promise<string> {
       stack,
       tags,
       cover,
+      images: images.length ? images : undefined,
       createdAt: new Date().toISOString(),
     },
     ...projects,

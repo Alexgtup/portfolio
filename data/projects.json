@@ -1,5 +1,39 @@
 [
   {
+    "slug": "skladskoi-pwa-skaner-dlya-sborki-zakazov-i-inventarizatsii",
+    "title": "Складской PWA-сканер для сборки заказов и инвентаризации",
+    "year": "2025",
+    "role": "Full-stack разработка + продуктовая логика",
+    "description": "PWA для склада с быстрым UI под ТСД/телефон: сборка заказов и инвентаризация через сканер. Поддержка нескольких сценариев (FBS/FBO), привязка МП-стикера вторым шагом, проверка пары штрихкодов, защита от дублей, оптимистичный учёт, автосинхронизация и журнал событий. Бэкенд на Google Apps Script с хранением в Google Sheets: статусы, прогресс по позициям, логи сканов, отдельный учёт внутренних PDF417/DataMatrix, архивирование и очистка старых заявок.",
+    "stack": [
+      "PWA",
+      "Next.js",
+      "TypeScript",
+      "Google Apps Script",
+      "Google Sheets",
+      "ZXing WASM",
+      "REST API",
+      "Webhooks"
+    ],
+    "tags": [
+      "PWA",
+      "Next.js",
+      "TypeScript",
+      "Google Apps Script",
+      "Google Sheets",
+      "ZXing WASM",
+      "REST API",
+      "Webhooks"
+    ],
+    "cover": "/uploads/skladskoi-pwa-skaner-dlya-sborki-zakazov-i-inventarizatsii-1766563926399-2afb8ea7dbe2.png",
+    "images": [
+      "/uploads/skladskoi-pwa-skaner-dlya-sborki-zakazov-i-inventarizatsii-1766563926399-2afb8ea7dbe2.png",
+      "/uploads/skladskoi-pwa-skaner-dlya-sborki-zakazov-i-inventarizatsii-1766563926407-40a29cf2e53a.png",
+      "/uploads/skladskoi-pwa-skaner-dlya-sborki-zakazov-i-inventarizatsii-1766563926406-307be6c42f90.png"
+    ],
+    "createdAt": "2025-12-24T08:12:06.408Z"
+  },
+  {
     "slug": "----telegram------",
     "title": "Фин Планер - Telegram-бот учёта расходов и финансовой аналитики",
     "description": "Telegram-бот для личных финансов: быстрый ввод трат/доходов, категории, регулярные расходы, баланс и отчёты за период. Формирует аналитику (что “тяжелее” всего тянет бюджет), показывает сводку и даёт понятные шаги по оптимизации - всё прямо в интерфейсе Telegram, без внешних приложений.",

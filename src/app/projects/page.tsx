@@ -3,166 +3,161 @@ import Image from "next/image";
 import { Section, H1, Lead, Card, Pill } from "@/components/ui";
 import { getProjects } from "@/lib/projects";
 
-function pick(v: string | string[] | undefined) {
-  return Array.isArray(v) ? v[0] : v;
-}
+type SP = {
+  tag?: string | string[];
+  tech?: string | string[];
+  q?: string | string[];
+};
+
+const pick = (v?: string | string[]) => (Array.isArray(v) ? v[0] : v) ?? "";
 
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams?: { tag?: string | string[]; tech?: string | string[]; q?: string | string[] };
+  searchParams?: Promise<SP> | SP;
 }) {
-  const tag = pick(searchParams?.tag);
-  const tech = pick(searchParams?.tech);
-  const q = (pick(searchParams?.q) || "").trim();
+  const sp = searchParams ? await Promise.resolve(searchParams) : {};
+  const tag = pick(sp.tag);
+  const tech = pick(sp.tech);
+  const q = pick(sp.q).trim().toLowerCase();
 
-  const all = await getProjects();
+  const projects = await getProjects();
 
-  // собрать списки фильтров
-  const allTags = Array.from(
-    new Set(all.flatMap((p) => p.tags ?? []).filter(Boolean))
-  ).sort((a, b) => a.localeCompare(b, "ru"));
-
-  const allTech = Array.from(
-    new Set(all.flatMap((p) => p.stack ?? []).filter(Boolean))
-  ).sort((a, b) => a.localeCompare(b, "ru"));
-
-  // фильтрация
-  const filtered = all.filter((p) => {
-    const okTag = tag ? (p.tags ?? []).includes(tag) : true;
-    const okTech = tech ? (p.stack ?? []).includes(tech) : true;
-    const hay = `${p.title} ${p.description ?? ""}`.toLowerCase();
-    const okQ = q ? hay.includes(q.toLowerCase()) : true;
-    return okTag && okTech && okQ;
+  const filtered = projects.filter((p) => {
+    const byTag = tag ? (p.tags ?? []).includes(tag) : true;
+    const byTech = tech ? (p.stack ?? []).includes(tech) : true;
+    const hay = `${p.title ?? ""} ${p.description ?? ""} ${(p.tags ?? []).join(" ")} ${(p.stack ?? []).join(" ")}`.toLowerCase();
+    const byQ = q ? hay.includes(q) : true;
+    return byTag && byTech && byQ;
   });
 
-  const hasFilter = Boolean(tag || tech || q);
+  const allTags = Array.from(new Set(projects.flatMap((p) => p.tags ?? []))).sort((a, b) => a.localeCompare(b));
+  const allTech = Array.from(new Set(projects.flatMap((p) => p.stack ?? []))).sort((a, b) => a.localeCompare(b));
+
+  const qs = (next: Partial<SP>) => {
+    const params = new URLSearchParams();
+    const nextTag = next.tag ?? (tag || undefined);
+    const nextTech = next.tech ?? (tech || undefined);
+    const nextQ = next.q ?? (q || undefined);
+
+    if (nextTag) params.set("tag", String(nextTag));
+    if (nextTech) params.set("tech", String(nextTech));
+    if (nextQ) params.set("q", String(nextQ));
+
+    const s = params.toString();
+    return s ? `/projects?${s}` : `/projects`;
+  };
 
   return (
     <Section className="pt-10 sm:pt-14">
-      <div className="max-w-4xl">
-        <H1>Проекты<span className="text-white/50">.</span></H1>
-        <Lead>Фильтры по тегам и технологиям - чтобы заказчик быстро нашёл релевантные примеры.</Lead>
+      <div className="max-w-5xl">
+        <H1>
+          Проекты<span className="text-white/50">.</span>
+        </H1>
+        <Lead>Скрины, роль, стек и короткий итог - без воды.</Lead>
 
-        {/* Search */}
-        <form className="mt-6" action="/projects" method="GET">
-          {tag ? <input type="hidden" name="tag" value={tag} /> : null}
-          {tech ? <input type="hidden" name="tech" value={tech} /> : null}
-
-          <input
-            name="q"
-            defaultValue={q}
-            placeholder="Поиск по названию/описанию…"
-            className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 outline-none text-sm"
-          />
-        </form>
-
-        {/* Active filter line */}
-        {hasFilter ? (
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-white/70">
-            <span>Активно:</span>
-            {tag ? <Pill active>Тег: {tag}</Pill> : null}
-            {tech ? <Pill active>Tech: {tech}</Pill> : null}
-            {q ? <Pill active>Поиск: {q}</Pill> : null}
-            <a href="/projects" className="text-sm text-white/70 hover:text-white transition no-underline ml-2">
-              Сбросить
-            </a>
-          </div>
-        ) : null}
-
-        {/* Tags */}
-        {allTags.length ? (
-          <div className="mt-8">
-            <div className="text-xs text-white/45 uppercase tracking-wide">Теги</div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Pill href="/projects" active={!tag}>Все</Pill>
-              {allTags.map((t) => (
-                <Pill
-                  key={t}
-                  href={`/projects?tag=${encodeURIComponent(t)}${tech ? `&tech=${encodeURIComponent(tech)}` : ""}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
-                  active={tag === t}
-                >
-                  {t}
-                </Pill>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {/* Tech */}
-        {allTech.length ? (
-          <div className="mt-6">
-            <div className="text-xs text-white/45 uppercase tracking-wide">Технологии</div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Pill
-                href={`/projects${tag ? `?tag=${encodeURIComponent(tag)}` : ""}${q ? `${tag ? "&" : "?"}q=${encodeURIComponent(q)}` : ""}`}
-                active={!tech}
-              >
-                Все
-              </Pill>
-              {allTech.map((t) => (
-                <Pill
-                  key={t}
-                  href={`/projects?tech=${encodeURIComponent(t)}${tag ? `&tag=${encodeURIComponent(tag)}` : ""}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
-                  active={tech === t}
-                >
-                  {t}
-                </Pill>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </div>
-
-      {/* List */}
-      <div className="mt-10 grid lg:grid-cols-2 gap-4">
-        {filtered.map((p) => (
-          <Link key={p.slug} href={`/projects/${p.slug}`} className="no-underline">
-            <Card className="p-0 overflow-hidden">
-              {p.cover ? (
-                <div className="relative h-48">
-                  <Image src={p.cover} alt={p.title} fill className="object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                </div>
-              ) : null}
-
-              <div className="p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="text-lg font-semibold tracking-tight">{p.title}</div>
-                    <div className="mt-1 text-sm text-white/55">{p.role}</div>
-                  </div>
-                  <div className="text-xs text-white/45 font-mono">{p.year}</div>
-                </div>
-
-                <div className="mt-3 text-sm text-white/70 leading-relaxed">{p.description}</div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {(p.tags ?? []).slice(0, 6).map((t) => (
-                    <Pill key={t} href={`/projects?tag=${encodeURIComponent(t)}`} className="cursor-pointer">
-                      {t}
-                    </Pill>
-                  ))}
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {(p.stack ?? []).slice(0, 8).map((s) => (
-                    <Pill key={s} href={`/projects?tech=${encodeURIComponent(s)}`} className="cursor-pointer">
-                      {s}
-                    </Pill>
-                  ))}
-                </div>
-
-                <div className="mt-6 text-sm text-white/70 hover:text-white transition">Открыть →</div>
+        <div className="mt-8 grid gap-6">
+          <Card className="p-5">
+            <div className="grid gap-5">
+              <div className="grid sm:grid-cols-[1fr_auto] gap-4 items-center">
+                <div className="text-sm text-white/70">Поиск</div>
+                <Link href="/projects" className="text-sm text-white/60 hover:text-white transition">
+                  Сбросить →
+                </Link>
               </div>
-            </Card>
-          </Link>
-        ))}
-      </div>
 
-      {filtered.length === 0 ? (
-        <div className="mt-10 text-sm text-white/60">Ничего не найдено под выбранные фильтры.</div>
-      ) : null}
+              <form action="/projects" method="get" className="grid sm:grid-cols-[1fr_auto] gap-3">
+                <input type="hidden" name="tag" value={tag} />
+                <input type="hidden" name="tech" value={tech} />
+
+                <input
+                  defaultValue={q}
+                  name="q"
+                  placeholder="Поиск по названию / описанию / стеку"
+                  className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-2 outline-none focus:border-white/25"
+                />
+                <button className="rounded-xl px-4 py-2 text-sm bg-white text-black hover:bg-white/90 transition">
+                  Найти
+                </button>
+              </form>
+
+              <div className="grid gap-3">
+                <div className="text-sm text-white/70">Теги</div>
+                <div className="flex flex-wrap gap-2">
+                  <Link href={qs({ tag: "" as any })} className={tag ? "opacity-60 hover:opacity-100 transition" : ""}>
+                    <Pill>Все</Pill>
+                  </Link>
+                  {allTags.map((t) => (
+                    <Link key={t} href={qs({ tag: t })} className={tag === t ? "" : "opacity-60 hover:opacity-100 transition"}>
+                      <Pill>{t}</Pill>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-3">
+                <div className="text-sm text-white/70">Технологии</div>
+                <div className="flex flex-wrap gap-2">
+                  <Link href={qs({ tech: "" as any })} className={tech ? "opacity-60 hover:opacity-100 transition" : ""}>
+                    <Pill>Все</Pill>
+                  </Link>
+                  {allTech.map((t) => (
+                    <Link key={t} href={qs({ tech: t })} className={tech === t ? "" : "opacity-60 hover:opacity-100 transition"}>
+                      <Pill>{t}</Pill>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <div className="grid gap-4">
+            {filtered.map((p) => {
+              const cover = p.cover || (p.images?.[0] ?? undefined);
+
+              return (
+                <Card key={p.slug} className="p-5">
+                  <div className="grid sm:grid-cols-[220px_1fr_auto] gap-5 items-start">
+                    {cover ? (
+                      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] aspect-[16/10]">
+                        <Image
+                          src={cover}
+                          alt={p.title}
+                          fill
+                          sizes="220px"
+                          className="object-cover"
+                        />
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-white/10 bg-white/[0.03] aspect-[16/10]" />
+                    )}
+
+                    <div className="min-w-0">
+                      <div className="text-lg font-semibold">{p.title}</div>
+                      {p.description ? <div className="mt-2 text-sm text-white/65">{p.description}</div> : null}
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {(p.stack ?? []).slice(0, 10).map((s) => (
+                          <Pill key={s}>{s}</Pill>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Link href={`/projects/${p.slug}`} className="shrink-0 text-sm text-white/70 hover:text-white transition">
+                      Открыть →
+                    </Link>
+                  </div>
+                </Card>
+              );
+            })}
+
+            {!filtered.length ? (
+              <Card className="p-6 text-white/60">Ничего не найдено по текущим фильтрам.</Card>
+            ) : null}
+          </div>
+        </div>
+      </div>
     </Section>
   );
 }

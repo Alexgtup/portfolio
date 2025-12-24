@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getProjects, saveProjects } from "@/lib/projects";
 
-type ActionState = { ok: boolean; error?: string } | null;
+export type ActionState = { ok: boolean; error?: string } | null;
 
 function safeSlug(input: string) {
   const map: Record<string, string> = {
@@ -100,3 +100,4 @@ export async function deleteProject(slug: string, _formData: FormData): Promise<
   revalidatePath("/projects");
   revalidatePath("/admin");
 }
+

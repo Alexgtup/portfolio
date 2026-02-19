@@ -11,6 +11,17 @@ export type ActionState =
   | { ok: false; error: string }
   | null;
 
+/**
+ * Админка выключена по умолчанию.
+ * Включается только если ADMIN_ENABLED=1 (например в .env.local).
+ * На Vercel переменную не ставишь -> админка недоступна.
+ */
+function assertAdminEnabled() {
+  if (process.env.ADMIN_ENABLED !== "1") {
+    throw new Error("Админка отключена");
+  }
+}
+
 function safeSlug(input: string) {
   const map: Record<string, string> = {
     а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z", и: "i", й: "y",
@@ -43,9 +54,10 @@ function isFile(v: unknown): v is File {
 }
 
 async function saveUpload(file: File, base: string): Promise<string> {
-  // ВАЖНО: на Vercel filesystem read-only, поэтому загрузки лучше делать локально и коммитить.
+  // На проде (Vercel) запись в filesystem не подходит - поэтому админка должна быть выключена.
+  // Но оставим защиту на случай, если кто-то включит ADMIN_ENABLED на Vercel.
   if (process.env.VERCEL) {
-    throw new Error("Загрузка файлов доступна только локально (на хостинге файловая система read-only).");
+    throw new Error("Загрузка файлов на Vercel через filesystem отключена");
   }
 
   const uploadsDir = path.join(process.cwd(), "public", "uploads");
@@ -74,6 +86,7 @@ async function createProjectImpl(formData: FormData): Promise<string> {
 
   const stackRaw = String(formData.get("stack") || "").trim();
   const tagsRaw = String(formData.get("tags") || "").trim();
+  const linksRaw = String(formData.get("links") || "").trim();
 
   if (!title) throw new Error("Нужно название проекта.");
 
@@ -95,19 +108,17 @@ async function createProjectImpl(formData: FormData): Promise<string> {
     files.push(legacyCover);
   }
 
-  const linksRaw = String(formData.get("links") || "").trim();
-
   const links = linksRaw
     ? linksRaw
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const [label, href] = line.split("|").map((x) => (x || "").trim());
-        if (!label || !href) return null;
-        return { label, href };
-      })
-      .filter(Boolean)
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const [label, href] = line.split("|").map((x) => (x || "").trim());
+          if (!label || !href) return null;
+          return { label, href };
+        })
+        .filter(Boolean)
     : [];
 
   const images = files.length ? await Promise.all(files.map((f) => saveUpload(f, slug))) : [];
@@ -141,6 +152,7 @@ async function createProjectImpl(formData: FormData): Promise<string> {
 
 export async function createProject(prev: ActionState, formData: FormData): Promise<ActionState> {
   try {
+    assertAdminEnabled();
     const slug = await createProjectImpl(formData);
     return { ok: true, slug };
   } catch (e: any) {
@@ -149,6 +161,8 @@ export async function createProject(prev: ActionState, formData: FormData): Prom
 }
 
 export async function deleteProject(slug: string, _formData: FormData): Promise<void> {
+  assertAdminEnabled();
+
   const s = String(slug || "").trim();
   if (!s) return;
 

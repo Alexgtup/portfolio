@@ -13,9 +13,9 @@ export type ActionState =
 
 function safeSlug(input: string) {
   const map: Record<string, string> = {
-    а:"a", б:"b", в:"v", г:"g", д:"d", е:"e", ё:"e", ж:"zh", з:"z", и:"i", й:"y",
-    к:"k", л:"l", м:"m", н:"n", о:"o", п:"p", р:"r", с:"s", т:"t", у:"u", ф:"f",
-    х:"h", ц:"ts", ч:"ch", ш:"sh", щ:"sch", ъ:"", ы:"y", ь:"", э:"e", ю:"yu", я:"ya",
+    а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z", и: "i", й: "y",
+    к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f",
+    х: "h", ц: "ts", ч: "ch", ш: "sh", щ: "sch", ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya",
   };
 
   const s = (input || "")
@@ -95,6 +95,21 @@ async function createProjectImpl(formData: FormData): Promise<string> {
     files.push(legacyCover);
   }
 
+  const linksRaw = String(formData.get("links") || "").trim();
+
+  const links = linksRaw
+    ? linksRaw
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const [label, href] = line.split("|").map((x) => (x || "").trim());
+        if (!label || !href) return null;
+        return { label, href };
+      })
+      .filter(Boolean)
+    : [];
+
   const images = files.length ? await Promise.all(files.map((f) => saveUpload(f, slug))) : [];
   const cover = images[0] || undefined;
 
@@ -110,6 +125,7 @@ async function createProjectImpl(formData: FormData): Promise<string> {
       cover,
       images: images.length ? images : undefined,
       createdAt: new Date().toISOString(),
+      links: links.length ? (links as any) : undefined,
     },
     ...projects,
   ];

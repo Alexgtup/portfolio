@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { site } from "@/data/site";
+import { OpenCmdKButton } from "@/components/OpenCmdKButton";
 
 const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
   <Link href={href} className="text-sm text-white/70 hover:text-white transition no-underline">
@@ -17,10 +18,12 @@ export function Header() {
           {site.name}<span className="text-white/50">.</span>
         </Link>
 
-        <div className="hidden sm:flex items-center gap-7">
+        <div className="hidden sm:flex items-center gap-3">
           <nav className="flex items-center gap-6">
             <NavLink href="/projects">Проекты</NavLink>
           </nav>
+
+          <OpenCmdKButton />
 
           <a
             href={tg}

@@ -1,5 +1,6 @@
 import { Section, H1, Lead, Card, ButtonLink } from "@/components/ui";
 import { site } from "@/data/site";
+import { CopyButton } from "@/components/CopyButton";
 
 export default function ContactPage() {
   const { telegram } = site.contacts;
@@ -14,8 +15,9 @@ export default function ContactPage() {
           <Card>
             <div className="text-sm text-white/55">Telegram</div>
             <div className="mt-2 font-medium">{telegram}</div>
-            <div className="mt-4">
+            <div className="mt-4 flex gap-3">
               <ButtonLink href={`https://t.me/${telegram.replace("@", "")}`}>Открыть</ButtonLink>
+              <CopyButton text={telegram} />
             </div>
           </Card>
         </div>

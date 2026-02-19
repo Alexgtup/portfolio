@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Section, Kicker, H1, Lead, Pill, GlassCard } from "@/components/ui";
 import { site } from "@/data/site";
 import { getProjects } from "@/lib/projects";
+import { FadeIn } from "@/components/FadeIn";
 
 export default async function Home() {
   const projects = await getProjects();
@@ -79,40 +80,42 @@ export default async function Home() {
         {/* Featured projects */}
         <div className="mt-12 grid md:grid-cols-2 gap-4">
           {projects.slice(0, 2).map((p) => (
-            <Link key={p.slug} href={`/projects/${p.slug}`} className="no-underline">
-              <GlassCard className="p-[1px]">
-                <div className="rounded-2xl overflow-hidden">
-                  {p.cover ? (
-                    <div className="relative h-52">
-                      <Image src={p.cover} alt={p.title} fill className="object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
-                    </div>
-                  ) : null}
-
-                  <div className="p-6">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-lg font-semibold tracking-tight">{p.title}</div>
-                        <div className="mt-1 text-sm text-white/55">{p.role}</div>
+            <FadeIn key={p.slug}>
+              <Link href={`/projects/${p.slug}`} className="no-underline">
+                <GlassCard className="p-[1px]">
+                  <div className="rounded-2xl overflow-hidden">
+                    {p.cover ? (
+                      <div className="relative h-52">
+                        <Image src={p.cover} alt={p.title} fill className="object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
                       </div>
-                      <div className="text-xs text-white/45 font-mono">{p.year}</div>
-                    </div>
+                    ) : null}
 
-                    <div className="mt-3 text-sm text-white/70 leading-relaxed">{p.description}</div>
+                    <div className="p-6">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-lg font-semibold tracking-tight">{p.title}</div>
+                          <div className="mt-1 text-sm text-white/55">{p.role}</div>
+                        </div>
+                        <div className="text-xs text-white/45 font-mono">{p.year}</div>
+                      </div>
 
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {(p.stack ?? []).slice(0, 8).map((s) => (
-                        <Pill key={s}>{s}</Pill>
-                      ))}
-                    </div>
+                      <div className="mt-3 text-sm text-white/70 leading-relaxed">{p.description}</div>
 
-                    <div className="mt-6 text-sm text-white/70 hover:text-white transition">
-                      Открыть →
+                      <div className="mt-5 flex flex-wrap gap-2">
+                        {(p.stack ?? []).slice(0, 8).map((s) => (
+                          <Pill key={s}>{s}</Pill>
+                        ))}
+                      </div>
+
+                      <div className="mt-6 text-sm text-white/70 hover:text-white transition">
+                        Открыть →
+                      </div>
                     </div>
                   </div>
-                </div>
-              </GlassCard>
-            </Link>
+                </GlassCard>
+              </Link>
+            </FadeIn>
           ))}
         </div>
       </Section>

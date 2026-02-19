@@ -137,3 +137,28 @@ body.bg-premium > footer {
     transform: translateX(30%) rotate(10deg);
   }
 }
+
+
+/* cmdk */
+.cmdk-overlay { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 18px; }
+.cmdk-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.65); backdrop-filter: blur(10px); }
+.cmdk {
+  position: relative;
+  width: min(720px, 92vw);
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(10,10,12,.92);
+  box-shadow: 0 30px 90px rgba(0,0,0,.65);
+  overflow: hidden;
+}
+.cmdk-top { display: flex; align-items: center; gap: 10px; padding: 14px 14px; border-bottom: 1px solid rgba(255,255,255,.10); }
+.cmdk-input { width: 100%; background: transparent; outline: none; color: rgba(255,255,255,.90); font-size: 14px; }
+.cmdk-kbd { font-size: 12px; color: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.14); padding: 4px 8px; border-radius: 10px; }
+.cmdk-list { max-height: min(52vh, 420px); overflow: auto; }
+.cmdk-item { width: 100%; display: flex; justify-content: space-between; gap: 14px; text-align: left; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,.06); }
+.cmdk-item:hover { background: rgba(255,255,255,.04); }
+.cmdk-item.is-active { background: rgba(99,102,241,.14); }
+.cmdk-label { color: rgba(255,255,255,.88); font-size: 14px; font-weight: 600; }
+.cmdk-hint { color: rgba(255,255,255,.55); font-size: 12px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmdk-empty { padding: 18px 14px; color: rgba(255,255,255,.55); font-size: 13px; }
+.cmdk-bottom { display: flex; justify-content: space-between; padding: 10px 14px; border-top: 1px solid rgba(255,255,255,.08); }

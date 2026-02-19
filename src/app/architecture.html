@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Portfolio - Architecture</title>
+    <style>
+      body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#0b0c10; color:#e5e7eb; }
+      .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 18px; }
+      h1 { margin: 0 0 10px; font-size: 24px; }
+      p { margin: 0 0 18px; color: rgba(229,231,235,.75); line-height: 1.45; }
+      .row { display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+      .card { border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); border-radius: 16px; padding: 14px; overflow-x: auto; }
+      .tabs { display:flex; gap:10px; margin: 18px 0 12px; }
+      .tab { cursor:pointer; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04); color:#e5e7eb; padding: 8px 12px; border-radius: 12px; }
+      .tab.active { border-color: rgba(99,102,241,.45); background: rgba(99,102,241,.14); }
+      .btn { cursor:pointer; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04); color:#e5e7eb; padding: 8px 12px; border-radius: 12px; }
+      .btn:hover { background: rgba(255,255,255,.07); }
+      .mermaid svg { min-width: 980px; }
+      .notes { margin-top: 14px; display:grid; gap:10px; }
+      .note { border: 1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.03); border-radius: 14px; padding: 12px; color: rgba(229,231,235,.82); }
+      .note b { color: #e5e7eb; }
+      code { color: rgba(229,231,235,.9); }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      <div class="row">
+        <div>
+          <h1>Architecture - portfolio (Next.js App Router)</h1>
+          <p>Слои: server pages (чтение) - client components (интерактив) - server actions (запись) - storage (projects.json + uploads).</p>
+        </div>
+        <button id="downloadSvg" class="btn" title="Скачать текущую диаграмму как SVG">скачать svg</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-target="d1">Overview</button>
+        <button class="tab" data-target="d2">Create flow</button>
+      </div>
+
+      <div id="d1" class="card">
+        <pre class="mermaid">
+flowchart TB
+  user[Посетитель] --> app[Next.js Portfolio]
+
+  subgraph app[Next.js Portfolio (App Router)]
+    pages[app/* pages - Server Components]
+    client[components/* - Client Components\nGallery / FadeIn / CommandK]
+    actions[app/admin/actions.ts\nServer Actions]
+    repo[lib/projects.ts\ngetProjects / saveProjects]
+    store[(data/projects.json)]
+    uploads[(public/uploads/*)]
+  end
+
+  pages --> repo --> store
+  actions --> repo
+  actions --> uploads
+
+  admin[Админ] -->|submit FormData| actions
+  user -->|browse| pages
+        </pre>
+      </div>
+
+      <div id="d2" class="card" style="display:none;margin-top:14px;">
+        <pre class="mermaid">
+sequenceDiagram
+  participant UI as AdminForm (client)
+  participant SA as createProject (server action)
+  participant Repo as lib/projects.ts
+  participant FS as uploads + projects.json
+
+  UI->>SA: submit FormData
+  SA->>Repo: getProjects()
+  Repo-->>SA: list
+  SA->>FS: saveUpload(images)
+  SA->>Repo: saveProjects(next)
+  SA->>SA: revalidatePath(/,/projects,/admin)
+  SA-->>UI: { ok:true, slug } / { ok:false, error }
+        </pre>
+      </div>
+
+      <div class="notes">
+        <div class="note"><b>Ключевая мысль:</b> страницы остаются <code>Server Components</code>, а интерактив вынесен в маленькие <code>"use client"</code> компоненты - меньше js в браузере.</div>
+        <div class="note"><b>Мутации:</b> админка пишет через <code>Server Actions</code>, потом делает <code>revalidatePath</code>, чтобы сбросить кеш и сразу увидеть обновления.</div>
+        <div class="note"><b>Хранилище:</b> сейчас <code>data/projects.json</code> + <code>public/uploads</code>, для прод-уровня загрузки лучше выносить в S3/R2/Cloudinary.</div>
+      </div>
+    </div>
+
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: "dark",
+        securityLevel: "strict",
+      });
+
+      async function renderVisible() {
+        // рендерим только видимые блоки, чтобы не было глюков с display:none
+        const visible = Array.from(document.querySelectorAll(".mermaid"))
+          .filter((el) => el.closest('[style*="display:none"]') === null);
+
+        await mermaid.run({ nodes: visible });
+      }
+
+      function currentSvgEl() {
+        const visibleCard = Array.from(document.querySelectorAll(".card"))
+          .find((el) => getComputedStyle(el).display !== "none");
+        if (!visibleCard) return null;
+        return visibleCard.querySelector("svg");
+      }
+
+      function downloadSvg() {
+        const svg = currentSvgEl();
+        if (!svg) return;
+
+        const name = document.querySelector(".tab.active")?.textContent?.trim() || "diagram";
+        const blob = new Blob([svg.outerHTML], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `portfolio-architecture-${name.toLowerCase().replace(/\s+/g, "-")}.svg`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        URL.revokeObjectURL(url);
+      }
+
+      const tabs = document.querySelectorAll(".tab");
+      tabs.forEach((b) => {
+        b.addEventListener("click", async () => {
+          tabs.forEach((x) => x.classList.remove("active"));
+          b.classList.add("active");
+
+          const target = b.getAttribute("data-target");
+          document.querySelectorAll("#d1,#d2").forEach((el) => (el.style.display = "none"));
+          document.getElementById(target).style.display = "block";
+
+          // перерендерим диаграмму на открытой вкладке
+          await renderVisible();
+        });
+      });
+
+      document.getElementById("downloadSvg").addEventListener("click", downloadSvg);
+
+      // первый рендер
+      await renderVisible();
+    </script>
+  </body>
+</html>
